@@ -46,6 +46,15 @@ ui <- fluidPage(
       ),
       actionButton("update_plot", "Update Plot"),
 
+      selectInput(
+        "select_gene",
+        "Select Gene",
+        choices = NULL,
+        multiple = FALSE,
+        selected = NULL
+      ),
+      actionButton("update_gene", "Update Gene Plot"),
+
       br(),
       br(),
 
@@ -118,25 +127,37 @@ ui <- fluidPage(
         ),
         plotOutput(outputId = "plot_zoom")
       ),
-      # conditionalPanel(
-      #   #   condition = "output.plot_image",
-      #   #   card(
-      #   #     full_screen = TRUE,
-      #   #     card_header(
-      #   #       class = "d-flex justify-content-between align-items-center",
-      #   #       "Gene Expression Plot",
-      #   #       div(
-      #   #         style = "display: flex; gap: 5px;",
-      #   #         selectInput("select_gene", "Select Gene", choices = NULL),
-      #   #         downloadButton("download_gene_png", "PNG", class = "btn-sm"),
-      #   #         downloadButton("download_gene_pdf", "PDF", class = "btn-sm")
-      #   #       )
-      # ),
-      # plotOutput(outputId = "plot_gene")
+      card(
+        card_header(
+          class = "d-flex justify-content-between align-items-center",
+          "Gene Expression Plot",
+          plotOutput(
+            outputId = "plot_expression"
+          ),
+          plotOutput(
+            outputId = "plot_expression_zoomed"
+          )
+        ),
+        # conditionalPanel(
+        #   #   condition = "output.plot_image",
+        #   #   card(
+        #   #     full_screen = TRUE,
+        #   #     card_header(
+        #   #       class = "d-flex justify-content-between align-items-center",
+        #   #       "Gene Expression Plot",
+        #   #       div(
+        #   #         style = "display: flex; gap: 5px;",
+        #   #         selectInput("select_gene", "Select Gene", choices = NULL),
+        #   #         downloadButton("download_gene_png", "PNG", class = "btn-sm"),
+        #   #         downloadButton("download_gene_pdf", "PDF", class = "btn-sm")
+        #   #       )
+        # ),
+        # plotOutput(outputId = "plot_gene")
+      )
     )
+    # )
+    # ),
   )
-  # )
-  # ),
 )
 
 server <- function(input, output, session) {
@@ -164,7 +185,8 @@ server <- function(input, output, session) {
       updateSelectInput(
         session,
         "select_gene",
-        choices = rownames(data_store$sce)
+        choices = rownames(data_store$sce),
+        selected = sample(rownames(data_store$sce), 1L)
       )
     }
   )
@@ -212,16 +234,33 @@ server <- function(input, output, session) {
         breaks = names(use_cols) |> sort()
       )
   })
-
   output$plot_image <- renderPlot({
     req(main_plot_obj())
     main_plot_obj()
   })
 
+  main_plot_expression <- eventReactive(input$update_gene, {
+    req(data_store$sce)
+
+    ImageFeaturePlot(
+      data_store$sce,
+      features = input$select_gene,
+      boundaries = "segmentations",
+      border.color = NA,
+      border.size = 0.1,
+      axes = TRUE,
+      scale = "feature"
+    )
+  })
+  output$plot_expression <- renderPlot({
+    req(main_plot_expression())
+    main_plot_expression()
+  })
+
   # Reactive for the zoomed plot (ggplot object)
   zoom_plot_obj <- eventReactive(input$zoom_plot, {
-    req(main_plot_obj())
-    req(input$x_min, input$x_max, input$y_min, input$y_max)
+    req(main_plot_obj(), input$x_min, input$y_min, input$x_max, input$y_max)
+    # req(input$x_min, input$x_max, input$y_min, input$y_max)
     output$plot_image <- renderPlot({
       req(main_plot_obj())
       main_plot_obj() +
@@ -246,10 +285,29 @@ server <- function(input, output, session) {
     # expand = FALSE
     # )
   })
-
   output$plot_zoom <- renderPlot({
     req(zoom_plot_obj())
     zoom_plot_obj()
+  })
+
+  zoom_gene_obj <- eventReactive(input$zoom_plot, {
+    req(
+      main_plot_expression(),
+      input$x_min,
+      input$x_max,
+      input$y_min,
+      input$y_max
+    )
+    p <- main_plot_expression()[[1]]
+    p +
+      xlim(input$x_min, input$x_max) +
+      ylim(input$y_min, input$y_max) +
+      theme_void() +
+      theme(plot.background = element_rect(fill = "white"))
+  })
+  output$plot_expression_zoomed <- renderPlot({
+    req(zoom_gene_obj())
+    zoom_gene_obj()
   })
 
   # Reactive for gene expression plot
