@@ -101,19 +101,6 @@ ui <- fluidPage(
           outputId = "plot_image"
         )
       ),
-      # conditionalPanel(
-      #   condition = "output.plot_image",
-      #   card(
-      #     card_header("Zoom Coordinates"),
-      #     layout_column_wrap(
-      #       width = 1 / 4,
-      #       numericInput("x1", "x1", value = 0),
-      #       numericInput("x2", "x2", value = 10000),
-      #       numericInput("y1", "y1", value = 0),
-      #       numericInput("y2", "y2", value = 10000)
-      #     )
-      #   )
-      # ),
       card(
         full_screen = TRUE,
         card_header(
@@ -128,6 +115,7 @@ ui <- fluidPage(
         plotOutput(outputId = "plot_zoom")
       ),
       card(
+        full_screen = TRUE,
         card_header(
           class = "d-flex justify-content-between align-items-center",
           "Gene Expression Plot",
@@ -138,25 +126,8 @@ ui <- fluidPage(
             outputId = "plot_expression_zoomed"
           )
         ),
-        # conditionalPanel(
-        #   #   condition = "output.plot_image",
-        #   #   card(
-        #   #     full_screen = TRUE,
-        #   #     card_header(
-        #   #       class = "d-flex justify-content-between align-items-center",
-        #   #       "Gene Expression Plot",
-        #   #       div(
-        #   #         style = "display: flex; gap: 5px;",
-        #   #         selectInput("select_gene", "Select Gene", choices = NULL),
-        #   #         downloadButton("download_gene_png", "PNG", class = "btn-sm"),
-        #   #         downloadButton("download_gene_pdf", "PDF", class = "btn-sm")
-        #   #       )
-        # ),
-        # plotOutput(outputId = "plot_gene")
       )
     )
-    # )
-    # ),
   )
 )
 
